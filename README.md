@@ -10,7 +10,6 @@
 	- Controller
 	- Service
 	- Repository
-	+ + + + + + + + + + + + + + 
 	- Injeção de Dependêcia
 	- Inversão de Controller
 	- HTTP Response
