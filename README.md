@@ -10,6 +10,11 @@
 	- Controller
 	- Service
 	- Repository
+	+ + + + + + + + + + + + + + 
+	- Injeção de Dependêcia
+	- Inversão de Controller
+	- HTTP Response
+	- DTO (Data Transfer Object)
 
 - ## Tecnologias Utilizadas: 
 	- Java 17 with Maven (Spring Boot 3.5.6)
