@@ -22,6 +22,7 @@
 	- H2 Database
 	- Spring Boot DevTools
 	- OpenAPI / Swagger
+    - Mapper
 - ## Como Rodar o Projeto:
   - Clone o Repositório do GitHub ou Baixe o Arquivo .ZIP do Projeto
   - Execute o Projeto na IDE de sua preferência
