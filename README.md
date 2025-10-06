@@ -1,11 +1,12 @@
 # API REST de Gestão de Academia
-
+### Obs:. O Código-Fonte do Projeto está na Branch *master*.
+### Obs²:. Os Dados do Banco de Dados não estão no programa.
+### Obs³:. Mesmo usando @Primary não consegui fazer o Swapper desconsiderar a ControllerV1, portanto, sempre priorize o uso dos endpoints da V2.
 - ## Criado para Gerenciar Atividades de uma Academia: 
 	- Gerenciar Alunos;
 	- Gerenciar Planos;
 	- Gerenciar Treinos;
 	- Gerenciar Pagamentos;
-
 - ## Arquitetura em Camadas: 
 	- Controller
 	- Service
@@ -14,7 +15,6 @@
 	- Inversão de Controller
 	- HTTP Response
 	- DTO (Data Transfer Object)
-
 - ## Tecnologias Utilizadas: 
 	- Java 17 with Maven (Spring Boot 3.5.6)
 	- Spring Data JPA
@@ -29,4 +29,28 @@
 	  - Porta OpenAPI / Swagger (Teste de EndPoints): http://localhost:8080/swagger-ui/index.html
   	- Porta Java / Spring Boot: http://localhost:8080
     - Porta H2 Database (Banco de Dados): http://localhost:8080/h2-console
-- ## Demonstrativo dos EndPoints
+- ## Endereçamento de Endpoints
+- ### Gerenciamento de Alunos
+	- GET </api/v2/alunos>
+	- GET ID </api/v2/alunos/{id}>
+	- POST </api/v2/alunos>
+	- PUT </api/v2/alunos/{id}>
+	- DELETE </api/v2/alunos/{id}>
+- ### Gerenciamento de Planos
+	- GET </api/v2/planos>
+	- GET ID </api/v2/planos/{id}>
+	- POST </api/v2/planos>
+	- PUT </api/v2/planos/{id}>
+	- DELETE </api/v2/planos/{id}>
+- ### Gerenciamento de Planos
+	- GET </api/v2/treinos>
+	- GET ID </api/v2/treinos/{id}>
+	- POST </api/v2/treinos>
+	- PUT </api/v2/treinos/{id}>
+	- DELETE </api/v2/treinos/{id}>
+- ### Gerenciamento de Planos
+	- GET </api/v2/pagamentos>
+	- GET ID </api/v2/pagamentos/{id}>
+	- POST </api/v2/pagamentos>
+	- PUT </api/v2/pagamentos/{id}>
+	- DELETE </api/v2/pagamentos/{id}>
