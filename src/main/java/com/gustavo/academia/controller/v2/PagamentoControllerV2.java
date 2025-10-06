@@ -2,6 +2,7 @@ package com.gustavo.academia.controller.v2;
 
 import com.gustavo.academia.dto.pagamento.PagamentoRequestDTO;
 import com.gustavo.academia.dto.pagamento.PagamentoResponseDTO;
+import com.gustavo.academia.mapper.PagamentoMapper;
 import com.gustavo.academia.entity.Pagamento;
 import com.gustavo.academia.entity.Aluno;
 import com.gustavo.academia.service.PagamentoService;
@@ -21,37 +22,19 @@ public class PagamentoControllerV2 {
 
     private final PagamentoService pagamentoService;
     private final AlunoService alunoService;
+    private final PagamentoMapper pagamentoMapper;
 
     @Autowired
-    public PagamentoControllerV2(PagamentoService pagamentoService, AlunoService alunoService) {
+    public PagamentoControllerV2(PagamentoService pagamentoService, AlunoService alunoService, PagamentoMapper pagamentoMapper) {
         this.pagamentoService = pagamentoService;
         this.alunoService = alunoService;
-    }
-
-    private PagamentoResponseDTO convertToDTO(Pagamento pagamento) {
-        PagamentoResponseDTO dto = new PagamentoResponseDTO();
-        dto.setId(pagamento.getId());
-        dto.setValor(pagamento.getValor());
-        dto.setDataPagamento(pagamento.getDataPagamento());
-        dto.setAlunoId(pagamento.getAluno().getId());
-        return dto;
-    }
-
-    private Pagamento convertToEntity(PagamentoRequestDTO dto) {
-        Pagamento pagamento = new Pagamento();
-        pagamento.setValor(dto.getValor());
-        if (dto.getAlunoId() != null) {
-            Aluno aluno = alunoService.findById(dto.getAlunoId())
-                    .orElseThrow(() -> new EntityNotFoundException("Aluno não encontrado."));
-            pagamento.setAluno(aluno);
-        }
-        return pagamento;
+        this.pagamentoMapper = pagamentoMapper;
     }
 
     @GetMapping
     public ResponseEntity<List<PagamentoResponseDTO>> getAllPagamentos() {
         List<PagamentoResponseDTO> pagamentosDTO = pagamentoService.findAll().stream()
-                .map(this::convertToDTO)
+                .map(pagamentoMapper::toPagamentoResponseDTO)
                 .collect(Collectors.toList());
         return ResponseEntity.ok(pagamentosDTO);
     }
@@ -59,15 +42,20 @@ public class PagamentoControllerV2 {
     @GetMapping("/{id}")
     public ResponseEntity<PagamentoResponseDTO> getPagamentoById(@PathVariable Long id) {
         Optional<Pagamento> pagamento = pagamentoService.findById(id);
-        return pagamento.map(this::convertToDTO).map(ResponseEntity::ok).orElse(ResponseEntity.notFound().build());
+        return pagamento.map(pagamentoMapper::toPagamentoResponseDTO).map(ResponseEntity::ok).orElse(ResponseEntity.notFound().build());
     }
 
     @PostMapping
     public ResponseEntity<PagamentoResponseDTO> createPagamento(@RequestBody PagamentoRequestDTO pagamentoDTO) {
         try {
-            Pagamento pagamento = convertToEntity(pagamentoDTO);
+            Pagamento pagamento = pagamentoMapper.toPagamento(pagamentoDTO);
+
+            Aluno aluno = alunoService.findById(pagamentoDTO.alunoId())
+                    .orElseThrow(() -> new EntityNotFoundException("Aluno não encontrado com o ID: " + pagamentoDTO.alunoId()));
+            pagamento.setAluno(aluno);
+
             Pagamento novoPagamento = pagamentoService.save(pagamento);
-            return new ResponseEntity<>(convertToDTO(novoPagamento), HttpStatus.CREATED);
+            return new ResponseEntity<>(pagamentoMapper.toPagamentoResponseDTO(novoPagamento), HttpStatus.CREATED);
         } catch (EntityNotFoundException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
         }

@@ -2,8 +2,8 @@ package com.gustavo.academia.controller.v2;
 
 import com.gustavo.academia.dto.treino.TreinoRequestDTO;
 import com.gustavo.academia.dto.treino.TreinoResponseDTO;
+import com.gustavo.academia.mapper.TreinoMapper;
 import com.gustavo.academia.entity.Treino;
-import com.gustavo.academia.utils.NivelTreino;
 import com.gustavo.academia.service.TreinoService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -19,35 +19,18 @@ import java.util.stream.Collectors;
 public class TreinoControllerV2 {
 
     private final TreinoService treinoService;
+    private final TreinoMapper treinoMapper;
 
     @Autowired
-    public TreinoControllerV2(TreinoService treinoService) {
+    public TreinoControllerV2(TreinoService treinoService, TreinoMapper treinoMapper) {
         this.treinoService = treinoService;
-    }
-
-    private TreinoResponseDTO convertToDTO(Treino treino) {
-        TreinoResponseDTO dto = new TreinoResponseDTO();
-        dto.setId(treino.getId());
-        dto.setNome(treino.getNome());
-        dto.setDescricao(treino.getDescricao());
-        dto.setNivel(treino.getNivel());
-        return dto;
-    }
-
-    private Treino convertToEntity(TreinoRequestDTO dto) {
-        Treino treino = new Treino();
-        treino.setNome(dto.getNome());
-        treino.setDescricao(dto.getDescricao());
-        if (dto.getNivel() != null) {
-            treino.setNivel(NivelTreino.valueOf(dto.getNivel().toUpperCase()));
-        }
-        return treino;
+        this.treinoMapper = treinoMapper;
     }
 
     @GetMapping
     public ResponseEntity<List<TreinoResponseDTO>> getAllTreinos() {
         List<TreinoResponseDTO> treinosDTO = treinoService.findAll().stream()
-                .map(this::convertToDTO)
+                .map(treinoMapper::toTreinoResponseDTO)
                 .collect(Collectors.toList());
         return ResponseEntity.ok(treinosDTO);
     }
@@ -55,14 +38,14 @@ public class TreinoControllerV2 {
     @GetMapping("/{id}")
     public ResponseEntity<TreinoResponseDTO> getTreinoById(@PathVariable Long id) {
         Optional<Treino> treino = treinoService.findById(id);
-        return treino.map(this::convertToDTO).map(ResponseEntity::ok).orElse(ResponseEntity.notFound().build());
+        return treino.map(treinoMapper::toTreinoResponseDTO).map(ResponseEntity::ok).orElse(ResponseEntity.notFound().build());
     }
 
     @PostMapping
     public ResponseEntity<TreinoResponseDTO> createTreino(@RequestBody TreinoRequestDTO treinoDTO) {
-        Treino treino = convertToEntity(treinoDTO);
+        Treino treino = treinoMapper.toTreino(treinoDTO);
         Treino novoTreino = treinoService.save(treino);
-        return new ResponseEntity<>(convertToDTO(novoTreino), HttpStatus.CREATED);
+        return new ResponseEntity<>(treinoMapper.toTreinoResponseDTO(novoTreino), HttpStatus.CREATED);
     }
 
     @PutMapping("/{id}")
@@ -70,14 +53,12 @@ public class TreinoControllerV2 {
         Optional<Treino> treinoOptional = treinoService.findById(id);
         if (treinoOptional.isPresent()) {
             Treino treino = treinoOptional.get();
-            treino.setNome(treinoDTO.getNome());
-            treino.setDescricao(treinoDTO.getDescricao());
-            if (treinoDTO.getNivel() != null) {
-                treino.setNivel(NivelTreino.valueOf(treinoDTO.getNivel().toUpperCase()));
-            }
+            treino.setNome(treinoDTO.nome());
+            treino.setDescricao(treinoDTO.descricao());
+            treino.setNivel(treinoMapper.stringToNivelTreino(treinoDTO.nivel()));
 
             Treino updatedTreino = treinoService.save(treino);
-            return ResponseEntity.ok(convertToDTO(updatedTreino));
+            return ResponseEntity.ok(treinoMapper.toTreinoResponseDTO(updatedTreino));
         } else {
             return ResponseEntity.notFound().build();
         }

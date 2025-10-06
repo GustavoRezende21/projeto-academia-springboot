@@ -2,7 +2,7 @@ package com.gustavo.academia.controller.v2;
 
 import com.gustavo.academia.dto.aluno.AlunoRequestDTO;
 import com.gustavo.academia.dto.aluno.AlunoResponseDTO;
-import com.gustavo.academia.dto.plano.PlanoResponseDTO;
+import com.gustavo.academia.mapper.AlunoMapper;
 import com.gustavo.academia.entity.Aluno;
 import com.gustavo.academia.entity.Plano;
 import com.gustavo.academia.service.AlunoService;
@@ -11,7 +11,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.beans.factory.annotation.Autowired;
-import jakarta.persistence.EntityNotFoundException;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -22,39 +21,19 @@ public class AlunoControllerV2 {
 
     private final AlunoService alunoService;
     private final PlanoService planoService;
+    private final AlunoMapper alunoMapper;
 
     @Autowired
-    public AlunoControllerV2(AlunoService alunoService, PlanoService planoService) {
+    public AlunoControllerV2(AlunoService alunoService, PlanoService planoService, AlunoMapper alunoMapper) {
         this.alunoService = alunoService;
         this.planoService = planoService;
-    }
-
-    private AlunoResponseDTO convertToDTO(Aluno aluno) {
-        AlunoResponseDTO dto = new AlunoResponseDTO();
-        dto.setId(aluno.getId());
-        dto.setNome(aluno.getNome());
-        dto.setCpf(aluno.getCpf());
-        dto.setDataNascimento(aluno.getDataNascimento());
-        dto.setDataMatricula(aluno.getDataMatricula());
-        dto.setStatus(aluno.isStatus());
-        if (aluno.getPlano() != null) {
-            dto.setPlano(convertToPlanoDTO(aluno.getPlano()));
-        }
-        return dto;
-    }
-
-    private PlanoResponseDTO convertToPlanoDTO(Plano plano) {
-        PlanoResponseDTO dto = new PlanoResponseDTO();
-        dto.setId(plano.getId());
-        dto.setNome(plano.getNome());
-        dto.setValor(plano.getValor());
-        return dto;
+        this.alunoMapper = alunoMapper;
     }
 
     @GetMapping
     public ResponseEntity<List<AlunoResponseDTO>> getAllAlunos() {
         List<AlunoResponseDTO> alunosDTO = alunoService.findAll().stream()
-                .map(this::convertToDTO)
+                .map(alunoMapper::toAlunoResponseDTO)
                 .collect(Collectors.toList());
         return ResponseEntity.ok(alunosDTO);
     }
@@ -62,30 +41,19 @@ public class AlunoControllerV2 {
     @GetMapping("/{id}")
     public ResponseEntity<AlunoResponseDTO> getAlunoById(@PathVariable Long id) {
         Optional<Aluno> aluno = alunoService.findById(id);
-        return aluno.map(this::convertToDTO).map(ResponseEntity::ok).orElse(ResponseEntity.notFound().build());
+        return aluno.map(alunoMapper::toAlunoResponseDTO).map(ResponseEntity::ok).orElse(ResponseEntity.notFound().build());
     }
 
     @PostMapping
     public ResponseEntity<AlunoResponseDTO> createAluno(@RequestBody AlunoRequestDTO alunoDTO) {
-        try {
-            Aluno aluno = new Aluno();
-            aluno.setNome(alunoDTO.getNome());
-            aluno.setCpf(alunoDTO.getCpf());
-            aluno.setDataNascimento(alunoDTO.getDataNascimento());
-            aluno.setDataMatricula(alunoDTO.getDataMatricula());
-            aluno.setStatus(alunoDTO.isStatus());
+        Aluno aluno = alunoMapper.toAluno(alunoDTO);
 
-            if (alunoDTO.getPlanoId() != null) {
-                Plano plano = planoService.findById(alunoDTO.getPlanoId())
-                        .orElseThrow(() -> new EntityNotFoundException("Plano não encontrado."));
-                aluno.setPlano(plano);
-            }
-
-            Aluno novoAluno = alunoService.save(aluno);
-            return new ResponseEntity<>(convertToDTO(novoAluno), HttpStatus.CREATED);
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+        if (alunoDTO.planoId() != null) {
+            Optional<Plano> planoOptional = planoService.findById(alunoDTO.planoId());
+            planoOptional.ifPresent(aluno::setPlano);
         }
+        Aluno novoAluno = alunoService.save(aluno);
+        return new ResponseEntity<>(alunoMapper.toAlunoResponseDTO(novoAluno), HttpStatus.CREATED);
     }
 
     @PutMapping("/{id}")
@@ -93,20 +61,21 @@ public class AlunoControllerV2 {
         Optional<Aluno> alunoOptional = alunoService.findById(id);
         if (alunoOptional.isPresent()) {
             Aluno aluno = alunoOptional.get();
-            aluno.setNome(alunoDTO.getNome());
-            aluno.setCpf(alunoDTO.getCpf());
-            aluno.setDataNascimento(alunoDTO.getDataNascimento());
-            aluno.setDataMatricula(alunoDTO.getDataMatricula());
-            aluno.setStatus(alunoDTO.isStatus());
+            aluno.setNome(alunoDTO.nome());
+            aluno.setCpf(alunoDTO.cpf());
+            aluno.setDataNascimento(alunoDTO.dataNascimento());
+            aluno.setDataMatricula(alunoDTO.dataMatricula());
+            aluno.setStatus(alunoDTO.status());
 
-            if (alunoDTO.getPlanoId() != null) {
-                Plano plano = planoService.findById(alunoDTO.getPlanoId())
-                        .orElseThrow(() -> new EntityNotFoundException("Plano não encontrado."));
-                aluno.setPlano(plano);
+            if (alunoDTO.planoId() != null) {
+                Optional<Plano> planoOptional = planoService.findById(alunoDTO.planoId());
+                planoOptional.ifPresent(aluno::setPlano);
+            } else {
+                aluno.setPlano(null);
             }
 
             Aluno updatedAluno = alunoService.save(aluno);
-            return ResponseEntity.ok(convertToDTO(updatedAluno));
+            return ResponseEntity.ok(alunoMapper.toAlunoResponseDTO(updatedAluno));
         } else {
             return ResponseEntity.notFound().build();
         }

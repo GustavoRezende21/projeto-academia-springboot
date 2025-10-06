@@ -2,6 +2,7 @@ package com.gustavo.academia.controller.v2;
 
 import com.gustavo.academia.dto.plano.PlanoRequestDTO;
 import com.gustavo.academia.dto.plano.PlanoResponseDTO;
+import com.gustavo.academia.mapper.PlanoMapper;
 import com.gustavo.academia.entity.Plano;
 import com.gustavo.academia.service.PlanoService;
 import org.springframework.http.HttpStatus;
@@ -17,24 +18,18 @@ import java.util.stream.Collectors;
 public class PlanoControllerV2 {
 
     private final PlanoService planoService;
+    private final PlanoMapper planoMapper;
 
     @Autowired
-    public PlanoControllerV2(PlanoService planoService) {
+    public PlanoControllerV2(PlanoService planoService, PlanoMapper planoMapper) {
         this.planoService = planoService;
-    }
-
-    private PlanoResponseDTO convertToDTO(Plano plano) {
-        PlanoResponseDTO dto = new PlanoResponseDTO();
-        dto.setId(plano.getId());
-        dto.setNome(plano.getNome());
-        dto.setValor(plano.getValor());
-        return dto;
+        this.planoMapper = planoMapper;
     }
 
     @GetMapping
     public ResponseEntity<List<PlanoResponseDTO>> getAllPlanos() {
         List<PlanoResponseDTO> planosDTO = planoService.findAll().stream()
-                .map(this::convertToDTO)
+                .map(planoMapper::toPlanoResponseDTO)
                 .collect(Collectors.toList());
         return ResponseEntity.ok(planosDTO);
     }
@@ -42,17 +37,14 @@ public class PlanoControllerV2 {
     @GetMapping("/{id}")
     public ResponseEntity<PlanoResponseDTO> getPlanoById(@PathVariable Long id) {
         Optional<Plano> plano = planoService.findById(id);
-        return plano.map(this::convertToDTO).map(ResponseEntity::ok).orElse(ResponseEntity.notFound().build());
+        return plano.map(planoMapper::toPlanoResponseDTO).map(ResponseEntity::ok).orElse(ResponseEntity.notFound().build());
     }
 
     @PostMapping
     public ResponseEntity<PlanoResponseDTO> createPlano(@RequestBody PlanoRequestDTO planoDTO) {
-        Plano plano = new Plano();
-        plano.setNome(planoDTO.getNome());
-        plano.setValor(planoDTO.getValor());
-
+        Plano plano = planoMapper.toPlano(planoDTO);
         Plano novoPlano = planoService.save(plano);
-        return new ResponseEntity<>(convertToDTO(novoPlano), HttpStatus.CREATED);
+        return new ResponseEntity<>(planoMapper.toPlanoResponseDTO(novoPlano), HttpStatus.CREATED);
     }
 
     @PutMapping("/{id}")
@@ -60,11 +52,11 @@ public class PlanoControllerV2 {
         Optional<Plano> planoOptional = planoService.findById(id);
         if (planoOptional.isPresent()) {
             Plano plano = planoOptional.get();
-            plano.setNome(planoDTO.getNome());
-            plano.setValor(planoDTO.getValor());
+            plano.setNome(planoDTO.nome());
+            plano.setValor(planoDTO.valor());
 
             Plano updatedPlano = planoService.save(plano);
-            return ResponseEntity.ok(convertToDTO(updatedPlano));
+            return ResponseEntity.ok(planoMapper.toPlanoResponseDTO(updatedPlano));
         } else {
             return ResponseEntity.notFound().build();
         }
