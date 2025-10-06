@@ -1,6 +1,6 @@
 # API REST de Gestão de Academia
 ### Obs:. O Código-Fonte do Projeto está na Branch *master*.
-### Obs²:. Os Dados do Banco de Dados não estão no programa.
+### Obs²:. O Banco de Dados se inicia limpo para evitar entrada de dados duplicados.
 ### Obs³:. Mesmo usando @Primary não consegui fazer o Swapper desconsiderar a ControllerV1, portanto, sempre priorize o uso dos endpoints da V2.
 - ## Criado para Gerenciar Atividades de uma Academia: 
 	- Gerenciar Alunos;
